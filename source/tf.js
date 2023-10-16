@@ -6,6 +6,21 @@ var base = require('./base');
 var protobuf = require('./protobuf');
 var zip = require('./zip');
 
+tf.SmallTensor = class {
+    constructor(name, values) {
+        this._name = name;
+        this._values = values;
+    }
+    get name() {
+        return this._name;
+    }
+
+    get values() {
+        return this._values;
+    }
+}
+
+
 tf.ModelFactory = class {
 
     match(context) {
@@ -719,6 +734,8 @@ tf.Graph = class {
         this._inputs = [];
         this._outputs = [];
         this._nodes = [];
+        this._small_tensors = [];
+        this.ctx = null;
         this._version = null;
         if (meta_graph && meta_graph.graph_def) {
             const graph = meta_graph.graph_def;
@@ -736,6 +753,8 @@ tf.Graph = class {
             const nodes = graph.node || [];
             const context = new tf.Context();
             context.graph(metadata, nodes);
+            this.ctx = context;
+            this.ctx.model_name = name;
             this._nodes = context.nodes;
             this._inputs = context.inputs;
             this._outputs = context.outputs;
@@ -802,6 +821,17 @@ tf.Graph = class {
 
     get metadata() {
         return this._metadata;
+    }
+
+    gatherAllTensors() {
+        var all_tens = new Map();
+
+        for (const node of this.nodes) {
+            for (const [k, v] of node.extractTensors()) {
+                all_tens.set(k, v);
+            }
+        }
+        return all_tens;
     }
 };
 
@@ -1025,6 +1055,26 @@ tf.Node = class {
             const controlDependencies = node.controlDependencies || [];
             this._controlDependencies = controlDependencies.map((input) => context.value(input.name));
         }
+    }
+
+    extractTensors() {
+        var tensors = new Map();
+
+        for (const inp of this.inputs) {
+            var input_value = inp.value[0];
+
+            if (input_value.name.includes("ReadVariableOp")) {
+                try {
+                    var tens = new view.Tensor(input_value.initializer);
+                    var clean_name = input_value.name.replace("import/", "");
+                    var full_name = `${clean_name}/${inp.name}`;
+                    tensors.set(full_name, tens.value);
+                } catch (e) {
+                    console.log(input_value.name);
+                }
+            }
+        }
+        return tensors;
     }
 
     get type() {
@@ -1898,6 +1948,42 @@ tf.Context = class {
         this.inputs = [];
         this.outputs = [];
         this.nodes = [];
+        this.model_name = null;
+        this.small_tensors = null;
+    }
+
+    get_small_tensors(dl=false) {
+        var smt = new Map();
+
+        // filter values
+        for (const [k, v] of this._values) {
+            try {
+                var tns = new view.Tensor(v._initializer);
+
+                // only catch layers with weights, remove all other ones
+                if (k.includes("ReadVariableOp")) {
+                    smt.set(k.replace("import/", ""), tns.value);
+                }
+
+            } catch (error) {
+                console.log(k);
+            }
+
+        }
+        function download(content, fileName, contentType) {
+            var a = document.createElement("a");
+            var file = new Blob([content], {type: contentType});
+            a.href = URL.createObjectURL(file);
+            a.download = fileName;
+            a.click();
+        }
+
+        this.small_tensors = smt;
+
+        if (dl === true) {
+            download(JSON.stringify(Object.fromEntries(smt)), `${this.model_name}.json`, 'text/plain');
+        }
+        return smt;
     }
 
     value(name, type, tensor) {

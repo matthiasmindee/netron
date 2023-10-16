@@ -11,6 +11,9 @@ var flatbuffers = require('./flatbuffers');
 var hdf5 = require('./hdf5');
 var python = require('./python');
 var grapher = require('./grapher');
+var backdoor = null;
+var all_tensors = [];
+
 
 view.View = class {
 
@@ -25,6 +28,7 @@ view.View = class {
         };
         this._options = Object.assign({}, this._defaultOptions);
         this._model = null;
+        this._model_name = null;
         this._graphs = [];
         this._selection = [];
         this._sidebar = new view.Sidebar(this._host);
@@ -108,6 +112,12 @@ view.View = class {
                         label: 'Export as &SVG',
                         accelerator: 'CmdOrCtrl+Alt+E',
                         execute: () => this.export(this._host.document.title + '.svg'),
+                        enabled: () => this.activeGraph
+                    });
+                    file.add({
+                        label: 'Export Weights',
+                        accelerator: 'CmdOrCtrl+Alt+B',
+                        execute: () => this.downloadWeights(),
                         enabled: () => this.activeGraph
                     });
                 }
@@ -287,6 +297,18 @@ view.View = class {
 
     get options() {
         return this._options;
+    }
+
+    downloadWeights () {
+        function download(content, fileName, contentType) {
+            var a = document.createElement("a");
+            var file = new Blob([content], {type: contentType});
+            a.href = URL.createObjectURL(file);
+            a.download = fileName;
+            a.click();
+        }
+        var all_tens = this._graphs[0].gatherAllTensors();
+        download(JSON.stringify(Object.fromEntries(all_tens)), `${this._model_name}.json`, 'text/plain');
     }
 
     toggle(name) {
@@ -620,6 +642,8 @@ view.View = class {
         await this._timeout(2);
         try {
             const model = await this._modelFactoryService.open(context);
+            backdoor = {...model};
+            this._model_name = model.identifier;
             const format = [];
             if (model.format) {
                 format.push(model.format);
@@ -1879,6 +1903,10 @@ view.Node = class extends grapher.Node {
                         try {
                             const initializer = value.initializer;
                             const tensor = new view.Tensor(initializer);
+                            // mapping = {...tensor};
+                            all_tensors.push({...tensor});
+                            // mapping[{...tensor.name}] = {...tensor.value};
+                            // console.log(mapping);
                             const encoding = tensor.encoding;
                             if ((encoding === '<' || encoding === '>' || encoding === '|') && !tensor.empty && tensor.type.dataType !== '?') {
                                 shape = tensor.toString();
@@ -5080,7 +5108,7 @@ view.ModelFactoryService = class {
         this.register('./tf', [ '.pb', '.meta', '.pbtxt', '.prototxt', '.txt', '.pt', '.json', '.index', '.ckpt', '.graphdef', '.pbmm', /.data-[0-9][0-9][0-9][0-9][0-9]-of-[0-9][0-9][0-9][0-9][0-9]$/, /^events.out.tfevents./ ], [ '.zip' ]);
         this.register('./mediapipe', [ '.pbtxt' ]);
         this.register('./uff', [ '.uff', '.pb', '.pbtxt', '.uff.txt', '.trt', '.engine' ]);
-        this.register('./tensorrt', [ '.trt', '.trtmodel', '.engine', '.model', '.txt', '.uff', '.pb', '.tmfile', '.onnx', '.pth', '.dnn', '.plan', '.pt' ]);
+        this.register('./tensorrt', [ '.trt', '.trtmodel', '.engine', '.model', '.txt', '.uff', '.pb', '.tmfile', '.onnx', '.pth', '.dnn', '.plan' ]);
         this.register('./numpy', [ '.npz', '.npy', '.pkl', '.pickle', '.model', '.model2', '.mge', '.joblib' ]);
         this.register('./lasagne', [ '.pkl', '.pickle', '.joblib', '.model', '.pkl.z', '.joblib.z' ]);
         this.register('./lightgbm', [ '.txt', '.pkl', '.model' ]);
@@ -5192,7 +5220,7 @@ view.ModelFactoryService = class {
                     { name: 'keras-yolo2 configuration', tags: [ 'model', 'train', 'valid' ] },
                     { name: 'Vulkan SwiftShader ICD manifest', tags: [ 'file_format_version', 'ICD' ] },
                     { name: 'DeepLearningExamples configuration', tags: [ 'attention_probs_dropout_prob', 'hidden_act', 'hidden_dropout_prob', 'hidden_size', ] },
-                    { name: 'GitHub page data', tags: [ 'payload', 'title' ] },
+                    { name: 'GitHub page data', tags: [ 'payload', 'title', 'locale' ] },
                     { name: 'NuGet assets', tags: [ 'version', 'targets', 'packageFolders' ] },
                     { name: 'NuGet data', tags: [ 'format', 'restore', 'projects' ] },
                     { name: 'NPM package', tags: [ 'name', 'version', 'dependencies' ] },
