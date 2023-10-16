@@ -11,8 +11,6 @@ var flatbuffers = require('./flatbuffers');
 var hdf5 = require('./hdf5');
 var python = require('./python');
 var grapher = require('./grapher');
-var backdoor = null;
-var all_tensors = [];
 
 
 view.View = class {
@@ -642,7 +640,6 @@ view.View = class {
         await this._timeout(2);
         try {
             const model = await this._modelFactoryService.open(context);
-            backdoor = {...model};
             this._model_name = model.identifier;
             const format = [];
             if (model.format) {
@@ -1903,10 +1900,6 @@ view.Node = class extends grapher.Node {
                         try {
                             const initializer = value.initializer;
                             const tensor = new view.Tensor(initializer);
-                            // mapping = {...tensor};
-                            all_tensors.push({...tensor});
-                            // mapping[{...tensor.name}] = {...tensor.value};
-                            // console.log(mapping);
                             const encoding = tensor.encoding;
                             if ((encoding === '<' || encoding === '>' || encoding === '|') && !tensor.empty && tensor.type.dataType !== '?') {
                                 shape = tensor.toString();
