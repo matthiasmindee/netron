@@ -1930,7 +1930,6 @@ tf.Context = class {
         this.inputs = [];
         this.outputs = [];
         this.nodes = [];
-        this.model_name = null;
     }
 
     value(name, type, tensor) {

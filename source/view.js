@@ -5101,7 +5101,7 @@ view.ModelFactoryService = class {
         this.register('./tf', [ '.pb', '.meta', '.pbtxt', '.prototxt', '.txt', '.pt', '.json', '.index', '.ckpt', '.graphdef', '.pbmm', /.data-[0-9][0-9][0-9][0-9][0-9]-of-[0-9][0-9][0-9][0-9][0-9]$/, /^events.out.tfevents./ ], [ '.zip' ]);
         this.register('./mediapipe', [ '.pbtxt' ]);
         this.register('./uff', [ '.uff', '.pb', '.pbtxt', '.uff.txt', '.trt', '.engine' ]);
-        this.register('./tensorrt', [ '.trt', '.trtmodel', '.engine', '.model', '.txt', '.uff', '.pb', '.tmfile', '.onnx', '.pth', '.dnn', '.plan' ]);
+        this.register('./tensorrt', [ '.trt', '.trtmodel', '.engine', '.model', '.txt', '.uff', '.pb', '.tmfile', '.onnx', '.pth', '.dnn', '.plan', '.pt' ]);
         this.register('./numpy', [ '.npz', '.npy', '.pkl', '.pickle', '.model', '.model2', '.mge', '.joblib' ]);
         this.register('./lasagne', [ '.pkl', '.pickle', '.joblib', '.model', '.pkl.z', '.joblib.z' ]);
         this.register('./lightgbm', [ '.txt', '.pkl', '.model' ]);
@@ -5213,7 +5213,7 @@ view.ModelFactoryService = class {
                     { name: 'keras-yolo2 configuration', tags: [ 'model', 'train', 'valid' ] },
                     { name: 'Vulkan SwiftShader ICD manifest', tags: [ 'file_format_version', 'ICD' ] },
                     { name: 'DeepLearningExamples configuration', tags: [ 'attention_probs_dropout_prob', 'hidden_act', 'hidden_dropout_prob', 'hidden_size', ] },
-                    { name: 'GitHub page data', tags: [ 'payload', 'title', 'locale' ] },
+                    { name: 'GitHub page data', tags: [ 'payload', 'title' ] },
                     { name: 'NuGet assets', tags: [ 'version', 'targets', 'packageFolders' ] },
                     { name: 'NuGet data', tags: [ 'format', 'restore', 'projects' ] },
                     { name: 'NPM package', tags: [ 'name', 'version', 'dependencies' ] },
