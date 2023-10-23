@@ -321,13 +321,22 @@ view.View = class {
             
         };
 
+        var order = new Map();
+        var cnt = 0;
+        for (const key of allKeys) {
+            order.set(key, cnt);
+            cnt++;
+        };
+
+        download(JSON.stringify(Object.fromEntries(order)), "order.json", 'text/plain');
+
         // download all little maps
         var tensorIdx = 0;
         console.log(allTens);
         for (const tensorMap of bundle) {
             download(JSON.stringify(Object.fromEntries(tensorMap)), `${this._model_name}_${tensorIdx}.json`, 'text/plain');
             tensorIdx++;
-        }
+        };
 
     }
 
