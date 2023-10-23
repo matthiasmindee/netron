@@ -305,8 +305,30 @@ view.View = class {
             a.download = fileName;
             a.click();
         }
-        var all_tens = this._graphs[0].gatherAllTensors();
-        download(JSON.stringify(Object.fromEntries(all_tens)), `${this._model_name}.json`, 'text/plain');
+        var allTens = this._graphs[0].gatherAllTensors();
+        var allKeys = Object.keys(Object.fromEntries(allTens));
+        var bundle = [new Map()];
+
+        // split the map into little maps easier to download
+        var counter = 0;
+        for (const k of allKeys) {
+            counter++;
+            if (counter % 100 == 0) {
+                
+                bundle.push(new Map());
+            }
+            bundle[bundle.length - 1].set(k, allTens.get(k));
+            
+        };
+
+        // download all little maps
+        var tensorIdx = 0;
+        console.log(allTens);
+        for (const tensorMap of bundle) {
+            download(JSON.stringify(Object.fromEntries(tensorMap)), `${this._model_name}_${tensorIdx}.json`, 'text/plain');
+            tensorIdx++;
+        }
+
     }
 
     toggle(name) {
